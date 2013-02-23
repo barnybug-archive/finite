@@ -1,9 +1,25 @@
 Finite
 ======
 
+Yet another finite state automaton for python.
+
 Introduction
 ------------
-Yet another finite state automaton for python.
+
+The emphasis is on a simple, readable configuration::
+
+    automata1:
+      start: Occupied
+      states:
+        Occupied: {}
+        Alarmed: {}
+      transitions:
+        Occupied->Alarmed:
+          when: house.presence.empty
+        Occupied->Alarmed:
+          when: house.presence.occupied
+
+It's particularly suited to home automation (my use case).
 
 Example
 -------
@@ -35,7 +51,7 @@ Transitions may have actions associated with them::
         actions:
         - speak('Alarm activated')
 
-These callbacks are called on the 'callback' object passed when to a World.
+These callbacks are called on the 'callback' object passed when make_world.
 
 A yaml file may list multiple automaton::
 
@@ -54,19 +70,24 @@ Code
 Example::
 
     from finite import dfa
-    automatons = dfa.Loader.load_file('my.dfa')
-    worlds = dfa.Worlds()
 
+    # create a callback
     class Callback(object):
         def speak(self, msg):
             # do some speaking
             pass
-
     callback = Callback()
 
-    for aut in auts:
+    # create automaton
+    worlds = dfa.Worlds()
+    automatons = dfa.Loader.load_file('my.dfa')
+    for aut in automatons:
         world = aut.make_world(callback)
         self.worlds.add(world)
+
+    # trigger a state change
+    ev = dfa.Event('house.presence.empty', True)
+    worlds.process(ev)
 
 Changelog
 ---------
