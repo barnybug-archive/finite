@@ -1,0 +1,53 @@
+# example automata for home
+home:
+    start: Occupied
+    
+    states:
+        Ringing:
+            entering:
+            - ringAlarm()
+            - startTimer('ring', 600)
+            - alert('Intruder detected. Sensor $summary', 'twitter', event)
+            leaving:
+            - quietAlarm()
+        Primed:
+            entering:
+            - startTimer('alarm', 120)
+            - speak('Alarm priming')
+        Occupied:
+            {}
+        Alarmed:
+            entering:
+            - speak('Alarm activated')
+        Deactivated:
+            entering:
+            - speak('Alarm deactivated')
+            - alert('@barnybug Alarm deactivated', 'twitter')
+            - alert('Alarm deactivated', ('xmpp', 'sms'))
+        
+    transitions:
+        Occupied->Primed:
+            when: house.presence.empty or alarm.control.on
+        Primed->Alarmed:
+            when: timer.alarm
+        Alarmed,Primed,Deactivated,Ringing->Occupied:
+            when: house.presence.occupied
+            actions:
+            - speak('Alarm deactivated')
+        Primed->Primed:
+            when: pir.upstairs.on or pir.kitchen.on or pir.living.on or door
+            actions:
+            # restart timer if activity whilst priming
+            - startTimer('alarm', 120)
+            - speak('Activity detected. Sensor $name', event)
+        Alarmed,Ringing->Ringing:
+            # when alarmed/ringing any events are alerted continuously
+            when: pir.upstairs or pir.kitchen or pir.living or door
+            actions:
+            - alert('Intruder detected $summary', 'xmpp', event)
+        Ringing->Deactivated:
+            when: timer.ring
+        Primed,Alarmed,Ringing->Deactivated:
+            when: alarm.control.off
+        Deactivated->Alarmed:
+            when: alarm.control.on
