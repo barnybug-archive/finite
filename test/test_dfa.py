@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-from twisted.trial import unittest
+import unittest
 from finite.dfa import *
 import os
 import yaml
